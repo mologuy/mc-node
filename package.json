@@ -1,0 +1,19 @@
+{
+  "name": "mc-node",
+  "version": "1.0.0",
+  "description": "Java Minecraft server wrapper for use with Usami",
+  "main": "app.js",
+  "scripts": {
+    "test": "node app.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/mologuy/mc-node.git"
+  },
+  "author": "mologuy",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/mologuy/mc-node/issues"
+  },
+  "homepage": "https://github.com/mologuy/mc-node#readme"
+}
