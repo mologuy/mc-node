@@ -102,3 +102,6 @@ dist
 
 # TernJS port file
 .tern-port
+
+# MC server files
+server-files/
