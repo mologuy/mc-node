@@ -26,30 +26,19 @@ async function downloadServer(){
 
 //main
 (async ()=>{
-    let error = false;
-
+    if (!fs.existsSync(serverpath)) {
+        await fs.promises.mkdir(serverpath);
+    }
     try {
-        fs.promises.readdir(serverpath)
+        await fs.promises.access(path.join(serverpath, "server.jar"), fs.constants.F_OK | fs.constants.W_OK)
     }
     catch (e) {
         if (e.code == "ENOENT") {
-            await fs.promises.mkdir(serverpath);
-            error = true;
-        }
-    }
-    finally {
-        try {
-            await fs.promises.access(path.join(serverpath, "server.jar"), fs.constants.F_OK | fs.constants.W_OK)
-        }
-        catch (e) {
-            if (e.code == "ENOENT") {
-                error = true;
-                console.log("Server not found, downloading...");
-            }
-        }
-
-        if (error) {
+            console.log("Server not found, downloading...");
             await downloadServer();
+        }
+        else {
+            throw e;
         }
     }
 })();
