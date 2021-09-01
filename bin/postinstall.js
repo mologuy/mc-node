@@ -1,7 +1,7 @@
 const fs = require("fs");
 const axios = require("axios");
 const path = require("path");
-const defaults = require("./default.json");
+let options;
 
 const serverpath = path.join(__dirname, "..", "server-files");
 
@@ -24,13 +24,28 @@ async function downloadServer(){
     });
 }
 
+async function loadOptionFile() {
+    const optionspath = path.join(__dirname, "..", "options.json");
+    if (fs.existsSync(optionspath)) {
+        options = require("../options.json");
+        console.log("Loaded options.json");
+    }
+    else {
+        options = require("./default.json");
+        console.log("options.json not found\nLoading defaults...");
+        await fs.promises.writeFile(optionspath, JSON.stringify(options,null,4));
+    }
+}
+
 //main
 (async ()=>{
+    await loadOptionFile();
     if (!fs.existsSync(serverpath)) {
         await fs.promises.mkdir(serverpath);
     }
     try {
         await fs.promises.access(path.join(serverpath, "server.jar"), fs.constants.F_OK | fs.constants.W_OK)
+        console.log(`server.jar found`);
     }
     catch (e) {
         if (e.code == "ENOENT") {

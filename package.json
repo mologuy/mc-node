@@ -4,7 +4,8 @@
   "description": "Java Minecraft server wrapper for use with Usami",
   "main": "app.js",
   "scripts": {
-    "test": "node app.js"
+    "test": "node app.js",
+    "postinstall": "node bin/postinstall.js"
   },
   "repository": {
     "type": "git",
