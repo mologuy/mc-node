@@ -104,4 +104,7 @@ dist
 .tern-port
 
 # MC server files
-server-files/
+.server-files/
+
+# Env file
+.ecosystem.config.js
