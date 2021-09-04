@@ -25,11 +25,11 @@ async function downloadServer(){
 }
 
 async function loadOptionFile() {
-    const optionspath = path.join(__dirname, "..", "ecosystem.config.js");
-    const defaultoptionspath = path.join(__dirname, "default.ecosystem.config.js");;
+    const optionspath = path.join(__dirname, "..", "config.json");
+    const defaultoptionspath = path.join(__dirname, "default.config.json");;
     if (fs.existsSync(optionspath)) {
         options = require(optionspath);
-        console.log("Loaded ecosystem.options.json");
+        console.log("Loaded config.json");
     }
     else {
         options = require(defaultoptionspath);

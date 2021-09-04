@@ -107,4 +107,7 @@ dist
 server-files/
 
 # Env file
-ecosystem.config.js
+# ecosystem.config.js
+
+# Config file
+config.json
