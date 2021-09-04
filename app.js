@@ -40,7 +40,7 @@ async function mcExitCallback(code) {
 async function sigintCallback() {
     rl_interface.close();
     mc.stdin.write("stop\n");
-    process.emit("ready");
+    process.send("ready");
     mcTimeout = setTimeout(()=>{
         console.log(`Server didn't stop in ${mcStopTimeoutMS/1000} seconds, forcing stop...`);
         mc.kill("SIGKILL");
@@ -52,8 +52,8 @@ async function sigintCallback() {
  */
 async function readyCallback(data) {
     if (data.toString().match(/^\[\d\d:\d\d:\d\d\] \[Server thread\/INFO\]: Done \(/)) {
-        console.log("Emitting Ready Signal");
-        process.emit("ready");
+        console.log("Ready.");
+        process.send("ready");
         mc.stdout.removeListener("data", readyCallback);
     }
 }
