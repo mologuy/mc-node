@@ -6,7 +6,7 @@
   "scripts": {
     "test": "node app.js",
     "postinstall": "node bin/postinstall.js",
-    "deploy": "pm2 start ecosystem.config.js"
+    "deploy": "npm install && pm2 start ecosystem.config.js"
   },
   "repository": {
     "type": "git",

@@ -40,6 +40,7 @@ async function mcExitCallback(code) {
 async function sigintCallback() {
     rl_interface.close();
     mc.stdin.write("stop\n");
+    process.emit("ready");
     mcTimeout = setTimeout(()=>{
         console.log(`Server didn't stop in ${mcStopTimeoutMS/1000} seconds, forcing stop...`);
         mc.kill("SIGKILL");
