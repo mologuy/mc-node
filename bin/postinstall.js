@@ -25,15 +25,16 @@ async function downloadServer(){
 }
 
 async function loadOptionFile() {
-    const optionspath = path.join(__dirname, "..", "options.json");
+    const optionspath = path.join(__dirname, "..", "ecosystem.config.js");
+    const defaultoptionspath = path.join(__dirname, "default.ecosystem.config.js");;
     if (fs.existsSync(optionspath)) {
-        options = require("../options.json");
-        console.log("Loaded options.json");
+        options = require(optionspath);
+        console.log("Loaded ecosystem.options.json");
     }
     else {
-        options = require("./default.json");
+        options = require(defaultoptionspath);
         console.log("options.json not found\nLoading defaults...");
-        await fs.promises.writeFile(optionspath, JSON.stringify(options,null,4));
+        await fs.promises.copyFile(defaultoptionspath, optionspath);
     }
 }
 
