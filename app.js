@@ -64,6 +64,11 @@ async function readyCallback(data) {
     }
 }
 
+/**
+ * @param {Buffer} data 
+ */
+async function chatCallback(data) {}
+
 async function downloadServer(){
     return new Promise(async (resolve, reject)=>{
         const versionManifestUrl = "https://launchermeta.mojang.com/mc/game/version_manifest_v2.json";
