@@ -81,7 +81,12 @@ async function downloadServer(){
         }
 
         const downloadVersionManifestUrl = res.data.versions.find((entry) => entry.id == versionToDownload).url;
-        res = await axios({method: "get", url: downloadVersionManifestUrl, responseType: "json"});
+        if (downloadVersionManifestUrl){
+            res = await axios({method: "get", url: downloadVersionManifestUrl, responseType: "json"});
+        }
+        else {
+            throw new Error(`Invalid Minecraft Version: ${versionToDownload}`);
+        }
 
         const downloadServerUrl = res.data.downloads.server.url;
         console.log(`Downloading server version ${versionToDownload} from:`, downloadServerUrl);
