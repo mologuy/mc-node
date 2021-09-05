@@ -4,10 +4,10 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 
-const mcStopTimeoutMS = process.env.MC_STOP_TIMEOUT || 5000;
+const mcStopTimeoutMS = parseInt(process.env.MC_STOP_TIMEOUT) || 5000;
 const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
-const mcMaxHeapSize = process.env.MAX_HEAP_SIZE || 1024;
-const mcInitialHeapSize = process.env.INIT_HEAP_SIZE || 1024;
+const mcMaxHeapSize = parseInt(process.env.MAX_HEAP_SIZE) || 1024;
+const mcInitialHeapSize = parseInt(process.env.INIT_HEAP_SIZE) || 1024;
 const mcVersion = process.env.MC_VERSION || "latest";
 
 const serverPath = path.join(__dirname,"server-files");
@@ -132,13 +132,13 @@ async function checkForDownload() {
 async function main() {
     await checkForDownload();
 
-    rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
-    rl_interface.on("line", stdinCallback);
-
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     mc.stdout.pipe(process.stdout);
     mc.on("exit", mcExitCallback);
     mc.stdout.on("data", readyCallback);
+
+    rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
+    rl_interface.on("line", stdinCallback);
 
     process.on("SIGINT", sigintCallback);
 }
