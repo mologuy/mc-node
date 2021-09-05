@@ -80,7 +80,7 @@ async function downloadServer(){
             versionToDownload = mcVersion;
         }
 
-        const downloadVersionManifestUrl = res.data.versions.find((entry) => entry.id == versionToDownload).url;
+        const downloadVersionManifestUrl = res.data.versions.find((entry) => entry.id == versionToDownload)?.url;
         if (downloadVersionManifestUrl){
             res = await axios({method: "get", url: downloadVersionManifestUrl, responseType: "json"});
         }
