@@ -111,3 +111,6 @@ server-files/
 
 # Config file
 config.json
+
+# Backups
+server-backups/

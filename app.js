@@ -3,6 +3,7 @@ const child = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
+const socket_io  = require("socket.io");
 
 const mcStopTimeoutMS = parseInt(process.env.MC_STOP_TIMEOUT) || 5000;
 const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
@@ -12,6 +13,8 @@ const mcVersion = process.env.MC_VERSION || "latest";
 
 const serverPath = path.join(__dirname,"server-files");
 const serverFilePath = path.join(serverPath, serverName);
+const consoleRegex_start = "^\\[\\d\\d:\\d\\d:\\d\\d\] \\[Server thread\\/INFO\\]:";
+const consoleRegex_username = "\\w{3,16}";
 
 /**
  * @type {readline.Interface}
@@ -25,6 +28,11 @@ let mc;
  * @type {NodeJS.Timeout}
  */
 let mcTimeout;
+
+/**
+ * @type {socket_io.Server}
+ */
+let io;
 
 /**
  * @param {string} line 
@@ -57,9 +65,11 @@ async function sigintCallback() {
  * @param {Buffer} data 
  */
 async function readyCallback(data) {
-    if (data.toString().match(/^\[\d\d:\d\d:\d\d\] \[Server thread\/INFO\]: Done \(/)) {
+    if (data.toString().match(`${consoleRegex_start} Done \\(`)) {
         console.log("Ready.");
-        process.send("ready");
+        if (process.send) {
+            process.send("ready");
+        }
         mc.stdout.removeListener("data", readyCallback);
     }
 }
@@ -67,7 +77,43 @@ async function readyCallback(data) {
 /**
  * @param {Buffer} data 
  */
-async function chatCallback(data) {}
+ async function consoleCallback(data) {
+
+ }
+
+
+/**
+ * @param {Buffer} data 
+ */
+async function chatCallback(data) {
+    const chatMatch = data.toString().match(`${consoleRegex_start} <(${consoleRegex_username})> ([^\\n]+)\\n$`);
+    if (chatMatch) {
+        const chatMessage = {username: chatMatch[1], message: chatMatch[2]};
+        console.log(chatMessage);
+    }
+}
+
+/**
+ * @param {Buffer} data 
+ */
+async function playerJoinCallback(data) {
+    const joinedMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) joined the game\\n$`);
+    if (joinedMatch) {
+        const joinedMessage = {username: joinedMatch[1]};
+        console.log(joinedMessage);
+    }
+}
+
+/**
+ * @param {Buffer} data 
+ */
+async function playerLeaveCallback(data) {
+    const leaveMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) left the game\\n$`);
+    if (leaveMatch) {
+        const leaveMessage = {username: leaveMatch[1]};
+        console.log(leaveMessage);
+    }
+}
 
 async function downloadServer(){
     return new Promise(async (resolve, reject)=>{
@@ -137,10 +183,17 @@ async function checkForDownload() {
 async function main() {
     await checkForDownload();
 
+    //io = new socket_io.Server(1337);
+
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
-    mc.stdout.pipe(process.stdout);
+    
     mc.on("exit", mcExitCallback);
+    mc.stdout.pipe(process.stdout);
+
     mc.stdout.on("data", readyCallback);
+    mc.stdout.on("data", chatCallback);
+    mc.stdout.on("data", playerJoinCallback);
+    mc.stdout.on("data", playerLeaveCallback);
 
     rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
     rl_interface.on("line", stdinCallback);
