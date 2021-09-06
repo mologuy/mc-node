@@ -29,7 +29,6 @@ let mc;
  * @type {NodeJS.Timeout}
  */
 let mcTimeout;
-
 /**
  * @type {socket_io.Server}
  */
@@ -198,6 +197,10 @@ async function main() {
 
     rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
     rl_interface.on("line", stdinCallback);
+    rl_interface.on("SIGINT", ()=>{
+        rl_interface.close();
+        process.kill(process.pid,"SIGINT");
+    });
 
     process.on("SIGINT", sigintCallback);
 }
