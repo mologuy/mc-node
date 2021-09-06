@@ -10,6 +10,7 @@ const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
 const mcMaxHeapSize = parseInt(process.env.MAX_HEAP_SIZE) || 1024;
 const mcInitialHeapSize = parseInt(process.env.INIT_HEAP_SIZE) || 1024;
 const mcVersion = process.env.MC_VERSION || "latest";
+const socketPort = parseInt(process.env.SOCKET_PORT) || 3000;
 
 const serverPath = path.join(__dirname,"server-files");
 const serverFilePath = path.join(serverPath, serverName);
@@ -183,7 +184,7 @@ async function checkForDownload() {
 async function main() {
     await checkForDownload();
 
-    //io = new socket_io.Server(1337);
+    //o = new socket_io.Server(socketPort);
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
