@@ -10,7 +10,7 @@ const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
 const mcMaxHeapSize = parseInt(process.env.MAX_HEAP_SIZE) || 1024;
 const mcInitialHeapSize = parseInt(process.env.INIT_HEAP_SIZE) || 1024;
 const mcVersion = process.env.MC_VERSION || "latest";
-const socketPort = parseInt(process.env.SOCKET_PORT) || 3000;
+const socketPort = parseInt(process.env.SOCKET_PORT) || 3001;
 
 const serverPath = path.join(__dirname,"server-files");
 const serverFilePath = path.join(serverPath, serverName);
@@ -54,6 +54,7 @@ async function mcExitCallback(code) {
 
 async function sigintCallback() {
     rl_interface.close();
+    io.close();
     mc.stdin.write("stop\n");
     mcTimeout = setTimeout(()=>{
         console.log(`Server didn't stop in ${mcStopTimeoutMS/1000} seconds, forcing stop...`);
@@ -90,6 +91,7 @@ async function chatCallback(data) {
     if (chatMatch) {
         const chatMessage = {username: chatMatch[1], message: chatMatch[2], date: new Date()};
         console.log(chatMessage);
+        io.emit("chat", chatMessage);
     }
 }
 
@@ -101,6 +103,7 @@ async function playerJoinCallback(data) {
     if (joinedMatch) {
         const joinedMessage = {username: joinedMatch[1], date: new Date()};
         console.log(joinedMessage);
+        io.emit("joined", joinedMessage);
     }
 }
 
@@ -112,6 +115,7 @@ async function playerLeaveCallback(data) {
     if (leaveMatch) {
         const leaveMessage = {username: leaveMatch[1], date: new Date()};
         console.log(leaveMessage);
+        io.emit("leave", leaveMessage);
     }
 }
 
@@ -181,9 +185,12 @@ async function checkForDownload() {
 }
 
 async function main() {
+    console.log("Dirname:", __dirname);
+    console.log("User:", process.env.USER);
+
     await checkForDownload();
 
-    //io = new socket_io.Server(socketPort);
+    io = new socket_io.Server(socketPort);
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
@@ -200,7 +207,6 @@ async function main() {
     rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
     rl_interface.on("line", stdinCallback);
     rl_interface.on("SIGINT", ()=>{
-        rl_interface.close();
         process.kill(process.pid,"SIGINT");
     });
 
