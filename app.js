@@ -88,7 +88,7 @@ async function readyCallback(data) {
 async function chatCallback(data) {
     const chatMatch = data.toString().match(`${consoleRegex_start} <(${consoleRegex_username})> ([^\\n]+)\\n$`);
     if (chatMatch) {
-        const chatMessage = {username: chatMatch[1], message: chatMatch[2]};
+        const chatMessage = {username: chatMatch[1], message: chatMatch[2], date: new Date()};
         console.log(chatMessage);
     }
 }
@@ -99,7 +99,7 @@ async function chatCallback(data) {
 async function playerJoinCallback(data) {
     const joinedMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) joined the game\\n$`);
     if (joinedMatch) {
-        const joinedMessage = {username: joinedMatch[1]};
+        const joinedMessage = {username: joinedMatch[1], date: new Date()};
         console.log(joinedMessage);
     }
 }
@@ -110,7 +110,7 @@ async function playerJoinCallback(data) {
 async function playerLeaveCallback(data) {
     const leaveMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) left the game\\n$`);
     if (leaveMatch) {
-        const leaveMessage = {username: leaveMatch[1]};
+        const leaveMessage = {username: leaveMatch[1], date: new Date()};
         console.log(leaveMessage);
     }
 }
@@ -183,10 +183,12 @@ async function checkForDownload() {
 async function main() {
     await checkForDownload();
 
-    //o = new socket_io.Server(socketPort);
+    //io = new socket_io.Server(socketPort);
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
+    console.log("MC Server PID:", mc.pid);
+
     mc.on("exit", mcExitCallback);
     mc.stdout.pipe(process.stdout);
 
