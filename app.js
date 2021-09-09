@@ -3,7 +3,7 @@ const child = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const socket_io  = require("socket.io");
+const io  = require("socket.io");
 
 const mcStopTimeoutMS = parseInt(process.env.MC_STOP_TIMEOUT) || 5000;
 const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
@@ -32,7 +32,7 @@ let mcTimeout;
 /**
  * @type {socket_io.Server}
  */
-let io;
+let server_io;
 
 /**
  * @param {string} line 
@@ -54,7 +54,7 @@ async function mcExitCallback(code) {
 
 async function sigintCallback() {
     rl_interface.close();
-    io.close();
+    server_io.close();
     mc.stdin.write("stop\n");
     mcTimeout = setTimeout(()=>{
         console.log(`Server didn't stop in ${mcStopTimeoutMS/1000} seconds, forcing stop...`);
@@ -72,7 +72,7 @@ async function readyCallback(data) {
             process.send("ready");
         }
         mc.stdout.removeListener("data", readyCallback);
-        io.emit("serverReady");
+        server_io.emit("serverReady");
     }
 }
 
@@ -82,7 +82,7 @@ async function readyCallback(data) {
  async function consoleCallback(data) {
     const line = data.toString().replace(/\n$/, "");
     const lineMessage = {line: line, date: new Date()};
-    io.emit("console", lineMessage);
+    server_io.emit("console", lineMessage);
  }
 
 
@@ -94,7 +94,7 @@ async function chatCallback(data) {
     if (chatMatch) {
         const chatMessage = {username: chatMatch[1], message: chatMatch[2], date: new Date()};
         console.log(chatMessage);
-        io.emit("chat", chatMessage);
+        server_io.emit("chat", chatMessage);
     }
 }
 
@@ -106,7 +106,7 @@ async function playerJoinCallback(data) {
     if (joinedMatch) {
         const joinedMessage = {username: joinedMatch[1], date: new Date()};
         console.log(joinedMessage);
-        io.emit("joined", joinedMessage);
+        server_io.emit("joined", joinedMessage);
     }
 }
 
@@ -118,7 +118,7 @@ async function playerLeaveCallback(data) {
     if (leaveMatch) {
         const leaveMessage = {username: leaveMatch[1], date: new Date()};
         console.log(leaveMessage);
-        io.emit("leave", leaveMessage);
+        server_io.emit("leave", leaveMessage);
     }
 }
 
@@ -193,7 +193,7 @@ async function main() {
 
     await checkForDownload();
 
-    io = new socket_io.Server(socketPort);
+    server_io = new io.Server(socketPort);
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
