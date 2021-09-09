@@ -6,6 +6,7 @@
     "wait_ready": true,
     "listen_timeout": 60000,
     "kill_timeout": 6000,
+    "autorestart": false,
     "env": {
       "STOP_TIMEOUT": 5000,
       "MAX_HEAP_SIZE":  1024,
