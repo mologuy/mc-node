@@ -118,7 +118,7 @@ async function playerLeaveCallback(data) {
     if (leaveMatch) {
         const leaveMessage = {username: leaveMatch[1], date: new Date()};
         console.log(leaveMessage);
-        server_io.emit("leave", leaveMessage);
+        server_io.emit("left", leaveMessage);
     }
 }
 
