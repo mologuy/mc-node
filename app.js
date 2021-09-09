@@ -72,6 +72,7 @@ async function readyCallback(data) {
             process.send("ready");
         }
         mc.stdout.removeListener("data", readyCallback);
+        io.emit("serverReady");
     }
 }
 
@@ -79,7 +80,9 @@ async function readyCallback(data) {
  * @param {Buffer} data 
  */
  async function consoleCallback(data) {
-
+    const line = data.toString().replace(/\n$/, "");
+    const lineMessage = {line: line, date: new Date()};
+    io.emit("console", lineMessage);
  }
 
 
@@ -200,6 +203,7 @@ async function main() {
     mc.stdout.pipe(process.stdout);
 
     mc.stdout.on("data", readyCallback);
+    mc.stdout.on("data", consoleCallback);
     mc.stdout.on("data", chatCallback);
     mc.stdout.on("data", playerJoinCallback);
     mc.stdout.on("data", playerLeaveCallback);
