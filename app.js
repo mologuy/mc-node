@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 const io  = require("socket.io");
+const ws = require("ws");
 
 const mcStopTimeoutMS = parseInt(process.env.MC_STOP_TIMEOUT) || 5000;
 const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
