@@ -4,6 +4,7 @@ const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
 const io  = require("socket.io");
+const io_client = require("socket.io-client");
 const ws = require("ws");
 
 const mcStopTimeoutMS = parseInt(process.env.MC_STOP_TIMEOUT) || 5000;
@@ -34,6 +35,10 @@ let mcTimeout;
  * @type {socket_io.Server}
  */
 let server_io;
+/**
+ * @type {io_client.Socket}
+ */
+let socket_io;
 
 /**
  * @param {string} line 
@@ -195,6 +200,7 @@ async function main() {
     await checkForDownload();
 
     server_io = new io.Server(socketPort);
+    socket_io = io_client("192.165.0.150");
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
