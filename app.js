@@ -5,7 +5,7 @@ const path = require("path");
 const axios = require("axios");
 const io  = require("socket.io");
 const io_client = require("socket.io-client");
-const ws = require("ws");
+//const ws = require("ws");
 
 const mcStopTimeoutMS = parseInt(process.env.MC_STOP_TIMEOUT) || 5000;
 const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
@@ -13,6 +13,8 @@ const mcMaxHeapSize = parseInt(process.env.MAX_HEAP_SIZE) || 1024;
 const mcInitialHeapSize = parseInt(process.env.INIT_HEAP_SIZE) || 1024;
 const mcVersion = process.env.MC_VERSION || "latest";
 const socketPort = parseInt(process.env.SOCKET_PORT) || 3001;
+const discordHostname = process.env.DISCORD_HOSTNAME || "localhost";
+const discordPort = parseInt(process.env.DISCORD_PORT) || 3001;
 
 const serverPath = path.join(__dirname,"server-files");
 const serverFilePath = path.join(serverPath, serverName);
@@ -200,7 +202,11 @@ async function main() {
     await checkForDownload();
 
     server_io = new io.Server(socketPort);
-    socket_io = io_client("192.165.0.150");
+
+    var discordURL = new URL("ws://localhost/");
+    discordURL.hostname = discordHostname;
+    discordURL.port = discordPort;
+    socket_io = io_client(discordURL.toString());
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
