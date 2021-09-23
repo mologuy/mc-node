@@ -3,7 +3,7 @@ const child = require("child_process");
 const fs = require("fs");
 const path = require("path");
 const axios = require("axios");
-const io  = require("socket.io");
+//const io  = require("socket.io");
 const io_client = require("socket.io-client");
 //const ws = require("ws");
 
@@ -12,9 +12,8 @@ const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
 const mcMaxHeapSize = parseInt(process.env.MAX_HEAP_SIZE) || 1024;
 const mcInitialHeapSize = parseInt(process.env.INIT_HEAP_SIZE) || 1024;
 const mcVersion = process.env.MC_VERSION || "latest";
-const socketPort = parseInt(process.env.SOCKET_PORT) || 3001;
 const discordHostname = process.env.DISCORD_HOSTNAME || "localhost";
-const discordPort = parseInt(process.env.DISCORD_PORT) || 3001;
+const discordPort = parseInt(process.env.DISCORD_PORT) || 3009;
 
 const serverPath = path.join(__dirname,"server-files");
 const serverFilePath = path.join(serverPath, serverName);
@@ -33,10 +32,6 @@ let mc;
  * @type {NodeJS.Timeout}
  */
 let mcTimeout;
-/**
- * @type {socket_io.Server}
- */
-let server_io;
 /**
  * @type {io_client.Socket}
  */
@@ -62,7 +57,7 @@ async function mcExitCallback(code) {
 
 async function sigintCallback() {
     rl_interface.close();
-    server_io.close();
+    socket_io.close();
     mc.stdin.write("stop\n");
     mcTimeout = setTimeout(()=>{
         console.log(`Server didn't stop in ${mcStopTimeoutMS/1000} seconds, forcing stop...`);
@@ -80,7 +75,7 @@ async function readyCallback(data) {
             process.send("ready");
         }
         mc.stdout.removeListener("data", readyCallback);
-        server_io.emit("serverReady");
+        socket_io.emit("serverReady");
     }
 }
 
@@ -90,7 +85,7 @@ async function readyCallback(data) {
  async function consoleCallback(data) {
     const line = data.toString().replace(/\n$/, "");
     const lineMessage = {line: line, date: new Date()};
-    server_io.emit("console", lineMessage);
+    socket_io.emit("console", lineMessage);
  }
 
 
@@ -102,7 +97,7 @@ async function chatCallback(data) {
     if (chatMatch) {
         const chatMessage = {username: chatMatch[1], message: chatMatch[2], date: new Date()};
         console.log(chatMessage);
-        server_io.emit("chat", chatMessage);
+        socket_io.emit("chat", chatMessage);
     }
 }
 
@@ -114,7 +109,7 @@ async function playerJoinCallback(data) {
     if (joinedMatch) {
         const joinedMessage = {username: joinedMatch[1], date: new Date()};
         console.log(joinedMessage);
-        server_io.emit("joined", joinedMessage);
+        socket_io.emit("joined", joinedMessage);
     }
 }
 
@@ -126,7 +121,7 @@ async function playerLeaveCallback(data) {
     if (leaveMatch) {
         const leaveMessage = {username: leaveMatch[1], date: new Date()};
         console.log(leaveMessage);
-        server_io.emit("left", leaveMessage);
+        socket_io.emit("left", leaveMessage);
     }
 }
 
@@ -201,11 +196,11 @@ async function main() {
 
     await checkForDownload();
 
-    server_io = new io.Server(socketPort);
-
     var discordURL = new URL("ws://localhost/");
     discordURL.hostname = discordHostname;
     discordURL.port = discordPort;
+
+    console.log("connecting to Discord Bot socket: ", discordURL.toString());
     socket_io = io_client(discordURL.toString());
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
