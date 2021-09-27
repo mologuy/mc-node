@@ -14,8 +14,6 @@
       "VERSION": "1.0.0",
       "MC_SERVER_FILENAME": "server.jar",
       "MC_VERSION": "latest",
-      "DISCORD_HOSTNAME": "localhost",
-      "DISCORD_PORT": 3000,
       "SOCKET_PORT": 3000
     }
   }]
