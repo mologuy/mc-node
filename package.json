@@ -4,7 +4,10 @@
   "description": "Java Minecraft server wrapper for use with Usami",
   "main": "app.js",
   "scripts": {
-    "test": "node app.js"
+    "test": "node app.js",
+    "postinstall": "node bin/postinstall.js",
+    "deploy": "npm install && pm2 start ecosystem.config.js",
+    "stop": "pm2 stop ecosystem.config.js"
   },
   "repository": {
     "type": "git",
@@ -15,5 +18,15 @@
   "bugs": {
     "url": "https://github.com/mologuy/mc-node/issues"
   },
-  "homepage": "https://github.com/mologuy/mc-node#readme"
+  "homepage": "https://github.com/mologuy/mc-node#readme",
+  "dependencies": {
+    "axios": "^0.21.1",
+    "child_process": "^1.0.2",
+    "fs": "^0.0.1-security",
+    "path": "^0.12.7",
+    "readline": "^1.3.0",
+    "socket.io": "^4.2.0",
+    "socket.io-client": "^4.2.0",
+    "ws": "^7.5.5"
+  }
 }
