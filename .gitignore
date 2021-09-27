@@ -102,3 +102,12 @@ dist
 
 # TernJS port file
 .tern-port
+
+# MC Server backups
+/server-backups
+
+# MC Server Files
+/server-files
+
+# Config file
+config.json
