@@ -63,7 +63,6 @@ async function mcExitCallback(code) {
 async function sigintCallback() {
     rl_interface.close();
     //ioSocket.close();
-    ioServer.of("/").disconnectSockets();
     ioServer.close();
     mc.stdin.write("stop\n");
     mcTimeout = setTimeout(()=>{
@@ -216,6 +215,9 @@ async function main() {
     //ioSocket = client_io(discordURL.toString());
 
     ioServer = new server_io.Server(socketPort);
+    ioServer.on("connection", (socket)=>{
+        console.log("Socket connected:", socket.id);
+    });
 
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
