@@ -51,6 +51,7 @@ async function mcExitCallback(code) {
     if (mcTimeout) {
         clearTimeout(mcTimeout);
     }
+    ioServer?.of("/").emit("closing", {code});
     process.exit(code);
 }
 
@@ -80,6 +81,7 @@ async function readyCallback(data) {
         mc.stdout.on("data", chatCallback);
         mc.stdout.on("data", playerJoinCallback);
         mc.stdout.on("data", playerLeaveCallback);
+        mc.stdout.on("data", advancementCallback);
         
         ioServer.of("/").emit("serverReady", {message: data.toString()});
     }
@@ -128,6 +130,18 @@ async function playerLeaveCallback(data) {
         const leaveMessage = {username: leaveMatch[1]};
         console.log(leaveMessage);
         ioServer.of("/").emit("left", leaveMessage);
+    }
+}
+
+/**
+ * @param {Buffer} data 
+ */
+async function advancementCallback(data) {
+    const advancementMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) has made the advancement \\[(.+)\\]\\n$`);
+    if (advancementMatch) {
+        const advancementMessage = {username: advancementMatch[1], advancement: advancementMatch[2]};
+        console.log(advancementMessage);
+        ioServer.of("/").emit("advancement", advancementMessage);
     }
 }
 
