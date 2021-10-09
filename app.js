@@ -75,7 +75,13 @@ async function readyCallback(data) {
             process.send("ready");
         }
         mc.stdout.removeListener("data", readyCallback);
-        ioServer.of("/").emit("serverReady", {date: new Date()});
+        
+        mc.stdout.on("data", consoleCallback);
+        mc.stdout.on("data", chatCallback);
+        mc.stdout.on("data", playerJoinCallback);
+        mc.stdout.on("data", playerLeaveCallback);
+        
+        ioServer.of("/").emit("serverReady", {message: data.toString()});
     }
 }
 
@@ -84,7 +90,7 @@ async function readyCallback(data) {
  */
  async function consoleCallback(data) {
     const line = data.toString().replace(/\n$/, "");
-    const lineMessage = {line: line, date: new Date()};
+    const lineMessage = {line: line};
     ioServer.of("/").emit("console", lineMessage);
  }
 
@@ -95,7 +101,7 @@ async function readyCallback(data) {
 async function chatCallback(data) {
     const chatMatch = data.toString().match(`${consoleRegex_start} <(${consoleRegex_username})> ([^\\n]+)\\n$`);
     if (chatMatch) {
-        const chatMessage = {username: chatMatch[1], message: chatMatch[2], date: new Date()};
+        const chatMessage = {username: chatMatch[1], message: chatMatch[2]};
         console.log(chatMessage);
         ioServer.of("/").emit("chat", chatMessage);
     }
@@ -107,7 +113,7 @@ async function chatCallback(data) {
 async function playerJoinCallback(data) {
     const joinedMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) joined the game\\n$`);
     if (joinedMatch) {
-        const joinedMessage = {username: joinedMatch[1], date: new Date()};
+        const joinedMessage = {username: joinedMatch[1]};
         console.log(joinedMessage);
         ioServer.of("/").emit("joined", joinedMessage);
     }
@@ -119,7 +125,7 @@ async function playerJoinCallback(data) {
 async function playerLeaveCallback(data) {
     const leaveMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) left the game\\n$`);
     if (leaveMatch) {
-        const leaveMessage = {username: leaveMatch[1], date: new Date()};
+        const leaveMessage = {username: leaveMatch[1]};
         console.log(leaveMessage);
         ioServer.of("/").emit("left", leaveMessage);
     }
@@ -208,10 +214,6 @@ async function main() {
     mc.stdout.pipe(process.stdout);
 
     mc.stdout.on("data", readyCallback);
-    mc.stdout.on("data", consoleCallback);
-    mc.stdout.on("data", chatCallback);
-    mc.stdout.on("data", playerJoinCallback);
-    mc.stdout.on("data", playerLeaveCallback);
 
     rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
     rl_interface.on("line", stdinCallback);
