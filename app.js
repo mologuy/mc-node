@@ -46,7 +46,7 @@ function loadDeathMsgRegex() {
      */
     const deathMsgs = JSON.parse( fs.readFileSync("./death_messages.json"));
     for (const deathMsg of deathMsgs) {
-        deathMessagesRegex.push(new RegExp(`${consoleRegex_start} (${deathMsg})\\n$`));
+        deathMessagesRegex.push(new RegExp(`${consoleRegex_start} ${deathMsg}\\n$`));
     }
     console.log(deathMessagesRegex);
 }
@@ -78,6 +78,7 @@ async function stdinCallback(line) {
 async function mcExitCallback(code) {
     console.log("Server exited with code:", code);
     ioServer?.of("/").emit("serverExit", {code});
+    ioServer?.close();
     if (mcTimeout) {
         clearTimeout(mcTimeout);
     }
@@ -184,8 +185,9 @@ async function advancementCallback(data) {
 async function deathCallback(data) {
     const deathMatch = deathMessageMatch(data.toString());
     if (deathMatch) {
-        console.log(deathMatch[1]);
-        ioServer.of("/").emit("death", {message: deathMatch[1]});
+        const deathMessage = {username: deathMatch[1], reason: deathMatch[2]};
+        console.log(deathMessage);
+        ioServer.of("/").emit("death", deathMessage);
     }
 }
 
