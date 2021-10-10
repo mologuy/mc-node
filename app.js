@@ -80,19 +80,21 @@ async function mcExitCallback(code) {
     if (mcTimeout) {
         clearTimeout(mcTimeout);
     }
-    ioServer?.of("/").emit("closing", {code});
     process.exit(code);
 }
 
 async function sigintCallback() {
     rl_interface.close();
-    //ioSocket.close();
-    ioServer.close();
+
+    ioServer?.of("/").emit("serverClosing", {code});
     mc.stdin.write("stop\n");
+
     mcTimeout = setTimeout(()=>{
         console.log(`Server didn't stop in ${mcStopTimeoutMS/1000} seconds, forcing stop...`);
         mc.kill("SIGKILL");
     },mcStopTimeoutMS);
+
+    ioServer.close();
 }
 
 /**
