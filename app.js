@@ -35,6 +35,35 @@ let mcTimeout;
  * @type {server_io.Server}
  */
 let ioServer;
+/**
+ * @type {RegExp[]}
+ */
+let deathMessagesRegex = [];
+
+function loadDeathMsgRegex() {
+    /**
+     * @type {[key: string]: string}
+     */
+    const deathMsgs = JSON.parse( fs.readFileSync("./death_messages.json"));
+    for (const deathMsg of deathMsgs) {
+        deathMessagesRegex.push(new RegExp(`${consoleRegex_start} ${deathMsg}\\n$`));
+    }
+    console.log(deathMessagesRegex);
+}
+
+/**
+ * @param {string} line 
+ * @returns {RegExpMatchArray}
+ */
+function deathMessageMatch(line) {
+    for (const deathMessageRegex of deathMessagesRegex) {
+        const match = line.match(deathMessageRegex);
+        if (match) { console.log("Passed test:", deathMessageRegex)
+            return match;
+        } //else { console.log("Failed test:", deathMsgRegex) }
+    }
+    return undefined;
+}
 
 /**
  * @param {string} line 
@@ -48,6 +77,8 @@ async function stdinCallback(line) {
  */
 async function mcExitCallback(code) {
     console.log("Server exited with code:", code);
+    ioServer?.of("/").emit("serverExit", {code});
+    ioServer?.close();
     if (mcTimeout) {
         clearTimeout(mcTimeout);
     }
@@ -56,13 +87,16 @@ async function mcExitCallback(code) {
 
 async function sigintCallback() {
     rl_interface.close();
-    //ioSocket.close();
-    ioServer.close();
+
+    ioServer?.of("/").emit("serverClosing");
     mc.stdin.write("stop\n");
+
     mcTimeout = setTimeout(()=>{
         console.log(`Server didn't stop in ${mcStopTimeoutMS/1000} seconds, forcing stop...`);
         mc.kill("SIGKILL");
     },mcStopTimeoutMS);
+
+    //ioServer.close();
 }
 
 /**
@@ -75,7 +109,15 @@ async function readyCallback(data) {
             process.send("ready");
         }
         mc.stdout.removeListener("data", readyCallback);
-        ioServer.of("/").emit("serverReady", {date: new Date()});
+        
+        mc.stdout.on("data", consoleCallback);
+        mc.stdout.on("data", chatCallback);
+        mc.stdout.on("data", playerJoinCallback);
+        mc.stdout.on("data", playerLeaveCallback);
+        mc.stdout.on("data", advancementCallback);
+        mc.stdout.on("data", deathCallback);
+        
+        ioServer.of("/").emit("serverReady", {message: data.toString()});
     }
 }
 
@@ -84,7 +126,7 @@ async function readyCallback(data) {
  */
  async function consoleCallback(data) {
     const line = data.toString().replace(/\n$/, "");
-    const lineMessage = {line: line, date: new Date()};
+    const lineMessage = {line: line};
     ioServer.of("/").emit("console", lineMessage);
  }
 
@@ -95,7 +137,7 @@ async function readyCallback(data) {
 async function chatCallback(data) {
     const chatMatch = data.toString().match(`${consoleRegex_start} <(${consoleRegex_username})> ([^\\n]+)\\n$`);
     if (chatMatch) {
-        const chatMessage = {username: chatMatch[1], message: chatMatch[2], date: new Date()};
+        const chatMessage = {username: chatMatch[1], message: chatMatch[2]};
         console.log(chatMessage);
         ioServer.of("/").emit("chat", chatMessage);
     }
@@ -107,7 +149,7 @@ async function chatCallback(data) {
 async function playerJoinCallback(data) {
     const joinedMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) joined the game\\n$`);
     if (joinedMatch) {
-        const joinedMessage = {username: joinedMatch[1], date: new Date()};
+        const joinedMessage = {username: joinedMatch[1]};
         console.log(joinedMessage);
         ioServer.of("/").emit("joined", joinedMessage);
     }
@@ -119,9 +161,33 @@ async function playerJoinCallback(data) {
 async function playerLeaveCallback(data) {
     const leaveMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) left the game\\n$`);
     if (leaveMatch) {
-        const leaveMessage = {username: leaveMatch[1], date: new Date()};
+        const leaveMessage = {username: leaveMatch[1]};
         console.log(leaveMessage);
         ioServer.of("/").emit("left", leaveMessage);
+    }
+}
+
+/**
+ * @param {Buffer} data 
+ */
+async function advancementCallback(data) {
+    const advancementMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) has made the advancement \\[(.+)\\]\\n$`);
+    if (advancementMatch) {
+        const advancementMessage = {username: advancementMatch[1], advancement: advancementMatch[2]};
+        console.log(advancementMessage);
+        ioServer.of("/").emit("advancement", advancementMessage);
+    }
+}
+
+/**
+ * @param {Buffer} data 
+ */
+async function deathCallback(data) {
+    const deathMatch = deathMessageMatch(data.toString());
+    if (deathMatch) {
+        const deathMessage = {username: deathMatch[1], reason: deathMatch[2]};
+        console.log(deathMessage);
+        ioServer.of("/").emit("death", deathMessage);
     }
 }
 
@@ -204,14 +270,12 @@ async function main() {
     
     console.log("MC Server PID:", mc.pid);
 
+    loadDeathMsgRegex();
+
     mc.on("exit", mcExitCallback);
     mc.stdout.pipe(process.stdout);
 
     mc.stdout.on("data", readyCallback);
-    mc.stdout.on("data", consoleCallback);
-    mc.stdout.on("data", chatCallback);
-    mc.stdout.on("data", playerJoinCallback);
-    mc.stdout.on("data", playerLeaveCallback);
 
     rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
     rl_interface.on("line", stdinCallback);
