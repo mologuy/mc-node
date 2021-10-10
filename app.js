@@ -171,9 +171,9 @@ async function playerLeaveCallback(data) {
  * @param {Buffer} data 
  */
 async function advancementCallback(data) {
-    const advancementMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) has made the advancement \\[(.+)\\]\\n$`);
+    const advancementMatch = data.toString().match(`${consoleRegex_start} (${consoleRegex_username}) (has made the advancement|has completed the challenge|has reached the goal) \\[(.+)\\]\\n$`);
     if (advancementMatch) {
-        const advancementMessage = {username: advancementMatch[1], advancement: advancementMatch[2]};
+        const advancementMessage = {username: advancementMatch[1], advancement: advancementMatch[3]};
         console.log(advancementMessage);
         ioServer.of("/").emit("advancement", advancementMessage);
     }
