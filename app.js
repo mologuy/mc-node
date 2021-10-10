@@ -35,6 +35,35 @@ let mcTimeout;
  * @type {server_io.Server}
  */
 let ioServer;
+/**
+ * @type {RegExp[]}
+ */
+let deathMessagesRegex = [];
+
+function loadDeathMsgRegex() {
+    /**
+     * @type {[key: string]: string}
+     */
+    const deathMsgs = JSON.parse( fs.readFileSync("./death_messages.json"));
+    for (const deathMsg of deathMsgs) {
+        deathMessagesRegex.push(new RegExp(`${consoleRegex_start} (${deathMsg})\\n$`));
+    }
+    console.log(deathMessagesRegex);
+}
+
+/**
+ * @param {string} line 
+ * @returns {RegExpMatchArray}
+ */
+function deathMessageMatch(line) {
+    for (const deathMessageRegex of deathMessagesRegex) {
+        const match = line.match(deathMessageRegex);
+        if (match) { console.log("Passed test:", deathMessageRegex)
+            return match;
+        } //else { console.log("Failed test:", deathMsgRegex) }
+    }
+    return undefined;
+}
 
 /**
  * @param {string} line 
@@ -82,6 +111,7 @@ async function readyCallback(data) {
         mc.stdout.on("data", playerJoinCallback);
         mc.stdout.on("data", playerLeaveCallback);
         mc.stdout.on("data", advancementCallback);
+        mc.stdout.on("data", deathCallback);
         
         ioServer.of("/").emit("serverReady", {message: data.toString()});
     }
@@ -142,6 +172,17 @@ async function advancementCallback(data) {
         const advancementMessage = {username: advancementMatch[1], advancement: advancementMatch[2]};
         console.log(advancementMessage);
         ioServer.of("/").emit("advancement", advancementMessage);
+    }
+}
+
+/**
+ * @param {Buffer} data 
+ */
+async function deathCallback(data) {
+    const deathMatch = deathMessageMatch(data.toString());
+    if (deathMatch) {
+        console.log(deathMatch[1]);
+        ioServer.of("/").emit("death", {message: deathMatch[1]});
     }
 }
 
@@ -223,6 +264,8 @@ async function main() {
     mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
     
     console.log("MC Server PID:", mc.pid);
+
+    loadDeathMsgRegex();
 
     mc.on("exit", mcExitCallback);
     mc.stdout.pipe(process.stdout);
