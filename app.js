@@ -77,6 +77,7 @@ async function stdinCallback(line) {
  */
 async function mcExitCallback(code) {
     console.log("Server exited with code:", code);
+    ioServer?.of("/").emit("serverExit", {code});
     if (mcTimeout) {
         clearTimeout(mcTimeout);
     }
@@ -86,7 +87,7 @@ async function mcExitCallback(code) {
 async function sigintCallback() {
     rl_interface.close();
 
-    ioServer?.of("/").emit("serverClosing", {code});
+    ioServer?.of("/").emit("serverClosing");
     mc.stdin.write("stop\n");
 
     mcTimeout = setTimeout(()=>{
@@ -94,7 +95,7 @@ async function sigintCallback() {
         mc.kill("SIGKILL");
     },mcStopTimeoutMS);
 
-    ioServer.close();
+    //ioServer.close();
 }
 
 /**
