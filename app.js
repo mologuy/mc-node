@@ -9,10 +9,9 @@ const server_io  = require("socket.io");
 
 const mcStopTimeoutMS = parseInt(process.env.MC_STOP_TIMEOUT) || 5000;
 const serverName = process.env.MC_SERVER_FILENAME || "server.jar";
-const mcMaxHeapSize = parseInt(process.env.MAX_HEAP_SIZE) || 1024;
-const mcInitialHeapSize = parseInt(process.env.INIT_HEAP_SIZE) || 1024;
 const mcVersion = process.env.MC_VERSION || "latest";
 const socketPort = parseInt(process.env.SOCKET_PORT) || 3001;
+const javaOptions = process.env.JAVA_OPTIONS || "-Xms1G -Xmx1G";
 
 const serverPath = path.join(__dirname,"server-files");
 const serverFilePath = path.join(serverPath, serverName);
@@ -266,7 +265,10 @@ async function main() {
         console.log("Socket connected:", socket.id);
     });
 
-    mc = child.spawn("java", [`-Xmx${mcMaxHeapSize}M`, `-Xmx${mcInitialHeapSize}M`, "-jar", serverName, "nogui"],{detached: true, cwd: serverPath});
+    const optionsArray = [...javaOptions.split(/\s/), "-jar", serverName, "nogui"];
+    console.log(optionsArray);
+    mc = child.spawn("java", optionsArray, {detached: true, cwd: serverPath});
+    mc.on("error", (e)=>{console.log(e)});
     
     console.log("MC Server PID:", mc.pid);
 
@@ -274,15 +276,16 @@ async function main() {
 
     mc.on("exit", mcExitCallback);
     mc.stdout.pipe(process.stdout);
+    mc.stderr.pipe(process.stdout);
 
     mc.stdout.on("data", readyCallback);
-
-    rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
-    rl_interface.on("line", stdinCallback);
-    rl_interface.on("SIGINT", ()=>{
-        process.kill(process.pid,"SIGINT");
-    });
-
+    {
+        rl_interface = readline.createInterface({input: process.stdin, output: process.stdout});
+        rl_interface.on("line", stdinCallback);
+        rl_interface.on("SIGINT", ()=>{
+            process.kill(process.pid,"SIGINT");
+        });
+    }
     process.on("SIGINT", sigintCallback);
 }
 main();
